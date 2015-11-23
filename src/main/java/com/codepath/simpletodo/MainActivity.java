@@ -13,32 +13,32 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import org.apache.commons.io.FileUtils;
+import com.activeandroid.query.Select;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class MainActivity extends AppCompatActivity {
 
-    ArrayList<String> items;
-    ArrayAdapter<String> itemsAdapter;
-    ListView lvItems;
+    ArrayList<TodoItem> todoItems;
+    CustomArrayAdapter todoItemsAdapter;
+    ListView lvTodoItems;
+    int displayOrder = 0;
 
     private final int REQUEST_CODE = 40;
+    private static final String SIMPLE_TODO = "SimpleTodo";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        lvItems = (ListView)findViewById(R.id.lvItems);
-        items = new ArrayList<>();
+        lvTodoItems = (ListView)findViewById(R.id.lvItems);
+        todoItems = new ArrayList<>();
+        todoItemsAdapter = new CustomArrayAdapter(this, todoItems);
         readItems();
-        itemsAdapter = new ArrayAdapter<>(this,
-                android.R.layout.simple_list_item_1, items);
-        lvItems.setAdapter(itemsAdapter);
+        lvTodoItems.setAdapter(todoItemsAdapter);
         setupListViewListener();
     }
 
@@ -68,31 +68,38 @@ public class MainActivity extends AppCompatActivity {
         EditText etNewItem = (EditText) findViewById(R.id.etNewItem);
         if (!etNewItem.getText().toString().trim().equals("")) {
             String itemText = etNewItem.getText().toString().trim();
-            itemsAdapter.add(itemText);
+            TodoItem todoItem = new TodoItem(itemText, "MED", ++displayOrder);
+            Logger.getLogger(SIMPLE_TODO).log(Level.INFO, "Saving " + itemText);
+            todoItem.save();
+            todoItems.add(todoItem);
+            todoItemsAdapter.notifyDataSetChanged();
         }
         etNewItem.setText("");
-        writeItems();
     }
 
     private void setupListViewListener() {
-        lvItems.setOnItemLongClickListener(
+        lvTodoItems.setOnItemLongClickListener(
                 new AdapterView.OnItemLongClickListener() {
                     public boolean onItemLongClick(AdapterView<?> adapter,
                                                    View item, int pos, long id) {
-                        items.remove(pos);
-                        itemsAdapter.notifyDataSetChanged();
-                        writeItems();
+                        TodoItem deleteItem = todoItems.remove(pos);
+                        todoItemsAdapter.notifyDataSetChanged();
+                        Logger.getLogger(SIMPLE_TODO).log(Level.WARNING, Long.toString(id));
+                        if (deleteItem != null) {
+                            deleteItem.delete();
+                        }
                         return true;
                     }
                 }
         );
-        lvItems.setOnItemClickListener(
+        lvTodoItems.setOnItemClickListener(
                 new AdapterView.OnItemClickListener() {
                     public void onItemClick(AdapterView<?> adapter,
-                                               View item, int pos, long id) {
+                                            View item, int pos, long id) {
                         TextView et = (TextView) item;
                         String content = et.getText().toString();
-                        launchEditItemActivity(pos, content);
+                        int displayOrder = pos;
+                        launchEditItemActivity(displayOrder, content);
                     }
                 }
         );
@@ -100,41 +107,30 @@ public class MainActivity extends AppCompatActivity {
 
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (resultCode == RESULT_OK && requestCode == REQUEST_CODE) {
-            Logger.getLogger("test").log(Level.WARNING, "hello");
             String content = data.getExtras().getString("content");
-            int position = data.getExtras().getInt("position", 0);
-            items.set(position, content);
-            itemsAdapter.notifyDataSetChanged();
-            writeItems();
+            int displayOrder = data.getExtras().getInt("displayOrder", 0);
+            String priority = data.getExtras().getString("priority");
+            TodoItem item = todoItems.get(displayOrder);
+            item.name = content;
+            item.save();
+            todoItemsAdapter.notifyDataSetChanged();
             Toast.makeText(this, "Updated with: " + content, Toast.LENGTH_SHORT).show();
         }
     }
 
-    private void launchEditItemActivity(int pos, String content) {
+    private void launchEditItemActivity(int displayOrder, String content) {
         Intent intent = new Intent(MainActivity.this, EditItemActivity.class);
         intent.putExtra("content", content);
-        intent.putExtra("position", pos);
+        intent.putExtra("displayOrder", displayOrder);
+        intent.putExtra("priority", "MED");
 
         startActivityForResult(intent, REQUEST_CODE);
     }
 
     private void readItems() {
-        File filesDir = getFilesDir();
-        File todoFile = new File(filesDir, "todo.txt");
-        try {
-            items = new ArrayList<>(FileUtils.readLines(todoFile));
-        } catch (IOException e) {
-            items = new ArrayList<>();
-        }
-    }
-
-    private void writeItems() {
-        File filesDir = getFilesDir();
-        File todoFile = new File(filesDir, "todo.txt");
-        try {
-            FileUtils.writeLines(todoFile, items);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        List<TodoItem> itemList = TodoItem.getAll();
+        todoItemsAdapter.addAll(itemList);
+        displayOrder = itemList.size();
+        Logger.getLogger(SIMPLE_TODO).log(Level.INFO, "Read items from SQLite");
     }
 }

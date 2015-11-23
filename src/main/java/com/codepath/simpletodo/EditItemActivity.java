@@ -12,7 +12,8 @@ import android.widget.EditText;
 public class EditItemActivity extends AppCompatActivity {
 
     EditText etEditItem;
-    int position;
+    int displayOrder;
+    String priority;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -22,8 +23,9 @@ public class EditItemActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        position = getIntent().getIntExtra("position", 0);
+        displayOrder = getIntent().getIntExtra("displayOrder", 0);
         String content = getIntent().getStringExtra("content");
+        priority = getIntent().getStringExtra("priority");
 
         etEditItem = (EditText) findViewById(R.id.eiMultilineText);
         etEditItem.setText(content);
@@ -48,7 +50,8 @@ public class EditItemActivity extends AppCompatActivity {
             Intent data = new Intent();
             String itemText = etEditItem.getText().toString().trim();
             data.putExtra("content", itemText);
-            data.putExtra("position", position);
+            data.putExtra("displayOrder", displayOrder);
+            data.putExtra("priority", priority);
             setResult(RESULT_OK, data);
         } else {
             setResult(RESULT_CANCELED);

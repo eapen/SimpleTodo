@@ -1,4 +1,4 @@
 <resources>
-    <string name="app_name">SimpleTodo</string>
-    <string name="title_activity_edit_item">EditItemActivity</string>
+    <string name="app_name">Simple Todo</string>
+    <string name="title_activity_edit_item">Edit Item Activity</string>
 </resources>

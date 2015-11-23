@@ -3,11 +3,22 @@
     package="com.codepath.simpletodo" >
 
     <application
+        android:name="com.activeandroid.app.Application"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/AppTheme" >
+
+        <!-- add the following metadata for version and database name -->
+        <meta-data
+            android:name="AA_DB_NAME"
+            android:value="SimpleTodoClient.db" />
+
+        <meta-data
+            android:name="AA_DB_VERSION"
+            android:value="1" />
+
         <activity android:name=".MainActivity" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
